@@ -4,11 +4,13 @@ import codesquad.dto.QuestionDto;
 import codesquad.exception.ForbiddenException;
 import codesquad.exception.UnauthorizedException;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 public class Question {
@@ -22,6 +24,7 @@ public class Question {
     private User writer;
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Where(clause = "deleted = false")
     private List<Answer> answers = new ArrayList<>();
 
     @Column(length = 50, nullable = false)
@@ -104,8 +107,30 @@ public class Question {
         return createdDate;
     }
 
-    public void delete() {
-        answers.forEach(Answer::delete);
+    public void delete(User user) {
+        if (!isDeletable(user)) throw new ForbiddenException();
+
+        answers.forEach(answer -> answer.delete(this));
         deleted = true;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Question question = (Question) o;
+        return deleted == question.deleted &&
+                Objects.equals(id, question.id) &&
+                Objects.equals(writer, question.writer) &&
+                Objects.equals(answers, question.answers) &&
+                Objects.equals(title, question.title) &&
+                Objects.equals(contents, question.contents) &&
+                Objects.equals(createdDate, question.createdDate);
+    }
+
+    @Override
+    public int hashCode() {
+
+        return Objects.hash(id, writer, answers, title, contents, deleted, createdDate);
     }
 }

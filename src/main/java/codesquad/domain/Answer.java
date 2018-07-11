@@ -1,5 +1,6 @@
 package codesquad.domain;
 
+import codesquad.exception.ForbiddenException;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
@@ -69,7 +70,15 @@ public class Answer {
         return writer.equals(user);
     }
 
-    public void delete() {
+    public boolean isDeletable(Question question) {
+        return this.question.equals(question);
+    }
+
+    public void delete(Question question) {
+        if (!isDeletable(question)) {
+            throw new ForbiddenException();
+        }
+
         deleted = true;
     }
 }

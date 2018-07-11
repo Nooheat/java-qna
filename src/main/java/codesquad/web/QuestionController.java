@@ -36,7 +36,7 @@ public class QuestionController {
 
     @GetMapping("/")
     public String showList(Model model) {
-        model.addAttribute("questions", questionRepository.findAll());
+        model.addAttribute("questions", questionRepository.findAllByDeletedIsFalse());
         return "index";
     }
 
@@ -61,8 +61,7 @@ public class QuestionController {
     public String delete(@PathVariable Long id, HttpSession session) {
         User user = AuthenticationUtil.getUserFromSession(session).orElseThrow(UnauthorizedException::new);
         Question question = findQuestionOrThrow(id);
-        if (!question.isDeletable(user)) throw new ForbiddenException();
-        question.delete();
+        question.delete(user);
         return "redirect:/";
     }
 
